@@ -49,7 +49,12 @@ app.post('/upload/cv', function(req, res){
               parser = DOCXParser;
             }
           }
-    
+
+          var dir = __dirname + '/uploads';
+          if (!fs.existsSync(dir)) {
+              fs.mkdirSync(dir, 0744);
+          }
+              
           writeStream = fs.createWriteStream(__dirname + '/uploads/' + filename);
           file.on('data', function(data) {
             buffs.push(data);
