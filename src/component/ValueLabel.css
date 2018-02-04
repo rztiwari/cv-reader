@@ -1,0 +1,11 @@
+.form {
+    padding-top: 20px;
+}
+.form label {
+    display: inline-block;
+    width: 500px;
+}
+.form .value {
+    display: inline-block;
+    width: 500px;
+}

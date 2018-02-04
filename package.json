@@ -1,0 +1,26 @@
+{
+  "name": "cv-reader",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "axios": "^0.17.1",
+    "body-parser": "^1.18.2",
+    "busboy": "^0.2.14",
+    "express": "^4.16.2",
+    "express-busboy": "^6.0.1",
+    "lodash": "^4.17.4",
+    "mammoth": "^1.4.4",
+    "pdfreader": "^0.2.4",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "react-router-dom": "^4.2.2",
+    "react-scripts": "1.1.0",
+    "word-extractor": "^0.1.4"
+  },
+  "scripts": {
+    "start": "node index",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}

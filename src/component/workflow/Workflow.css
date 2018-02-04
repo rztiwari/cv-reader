@@ -1,0 +1,27 @@
+.workflow {
+    display: flex;
+}
+.swimlane {
+    display: inline-block;
+    width: 24%;
+    height: 600px;
+    border: 1px solid red;
+    padding: 5px;
+}
+
+.header {   
+    text-align: center;
+    padding: 20px 0;
+    border: 1px solid green;
+    background: lightgreen; 
+    font-size: 1.3rem;
+}
+.data {
+    height: 40px;
+    background: lightslategrey;
+    padding: 10px 5px;
+    margin-top: 10px;
+}
+.dragging {
+    background-color: blueviolet;
+}
