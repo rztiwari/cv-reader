@@ -3,6 +3,10 @@ var _ = require('lodash');
 
 const NO_RESULT_MESSAGE = 'No Results Found';
 const WRITE_CALL_FAILS = 'Write call fails';
+const INCORRECT_JOB_ID = "In-correct job id";
+const COULD_NOT_DELETE_CANDIDATE = "Could not delete the candidate";
+const CANDIDATE_NOT_PRESENT = "Candidate not found for the job id";
+const JOBID_NOT_FOUND = "Job id not found";
 
 const CandidateDAO = {
 
@@ -95,6 +99,10 @@ const CandidateDAO = {
             if (!jobData.data || jobData.data.length === 0) {
                 jobData.data = [];
             }
+            if(jobData.data.length > 0){
+                lastCondidateId = jobData.data[jobData.data.length -1]['candidateId'];
+            }
+            candidate.candidateId = parseInt(lastCondidateId, 10) + 1;
             jobData.data.push(candidate);
             arr = _.reject(data, function (job) { return job.jobId === jobId });
             arr.push(jobData);
@@ -113,7 +121,7 @@ const CandidateDAO = {
     },
 
     deleteCandidateInJobId: function (jobId, candidateId, callback) {
-        var jobData, candidates, arr, dataToLoad, res = {};
+        var jobData, candidates, candidateToDelete, arr, dataToLoad, res = {};
         readData(function (response) {
             if (response.status === 'SUCCESS') {
                 var data = response.result.data;
@@ -121,51 +129,69 @@ const CandidateDAO = {
                 if (data && data.length > 0) {
                     jobData = _.find(data, function (item) { return item['jobId'] === jobId });
                     if (jobData) {
-                        candidates = _.reject(jobData.data, function (obj) { return obj.candidateId === candidateId });
-                    }
-                    jobData.data = candidates;
-                    arr = _.reject(data, function (job) { return joib.jobId === jobId });
-                    arr.push(jobData);
-                    dataToLoad = { "data": arr };
-                    writeData(dataToLoad, function (response) {
-                        if (response && response.status === 'SUCCESS') {
-                            callback(response);
+                        candidateToDelete = _.find(jobData.data, function (obj) { return obj.candidateId === candidateId });
+                        if (candidateToDelete) {
+                            candidates = _.reject(jobData.data, function (obj) { return obj.candidateId === candidateId });
+                            jobData.data = candidates;
+                            arr = _.reject(data, function (job) { return job.jobId === jobId });
+                            arr.push(jobData);
+                            dataToLoad = { "data": arr };
+                            writeData(dataToLoad, function (response) {
+                                if (response && response.status === 'SUCCESS') {
+                                    callback(response);
+                                } else {
+                                    res = {};
+                                    res.status = 'ERROR';
+                                    res.error = COULD_NOT_DELETE_CANDIDATE;
+                                    callback(res);
+                                }
+                            });
                         } else {
                             res = {};
                             res.status = 'ERROR';
-                            res.error = WRITE_CALL_FAILS;
+                            res.error = CANDIDATE_NOT_PRESENT;
                             callback(res);
                         }
-                    });
+                    } else {
+                        res = {};
+                        res.status = 'ERROR';
+                        res.error = INCORRECT_JOB_ID;
+                        callback(res);
+                    }
                 }
             } else {
-                res = {};
-                res.status = 'ERROR';
-                res.error = WRITE_CALL_FAILS;
-                callback(res);
+                callback(response);
             }
         });
     },
 
-    deleteJobId: function (jobId, callBack) {
-        var jobData, dataToLoad, res = {};
+    deleteJobId: function (jobId, callback) {
+        var jobData, dataToDelete, dataToLoad, res = {};
         readData(function (response) {
             if (response.status === 'SUCCESS') {
                 var data = response.result.data;
                 var result = [], res = {};
                 if (data && data.length > 0) {
-                    jobData = _.reject(data, function (item) { return item['jobId'] === jobId });
-                    dataToLoad = { "data": jobData };
-                    writeData(dataToLoad, function (response) {
-                        if (response && response.status === 'SUCCESS') {
-                            callback(response);
-                        } else {
-                            res = {};
-                            res.status = 'ERROR';
-                            res.error = WRITE_CALL_FAILS;
-                            callback(res);
-                        }
-                    });
+                    dataToDelete = _.find(data, function (item) { return item['jobId'] === jobId });
+                    if (dataToDelete) {
+                        jobData = _.reject(data, function (item) { return item['jobId'] === jobId });
+                        dataToLoad = { "data": jobData };
+                        writeData(dataToLoad, function (response) {
+                            if (response && response.status === 'SUCCESS') {
+                                callback(response);
+                            } else {
+                                res = {};
+                                res.status = 'ERROR';
+                                res.error = WRITE_CALL_FAILS;
+                                callback(res);
+                            }
+                        });
+                    } else {
+                        res = {};
+                        res.status = 'ERROR';
+                        res.error = JOBID_NOT_FOUND;
+                        callback(res);
+                    }
                 }
             } else {
                 res = {};
