@@ -42,7 +42,7 @@ class FileUploader extends Component {
     //         skillsTag: '#Java #Javascript #Ruby #Perl #Maven #REACT #REDUX #Oracle #Automation'
     //     });
 
-        axios.post('/upload/cv', data, config)
+        axios.post('/api/upload/cv', data, config)
           .then((response) => {
               this.setState({
                   form: false

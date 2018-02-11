@@ -83,7 +83,7 @@ const CandidateDAO = {
     },
 
     insertNewCandidateByJobId: function (jobId, candidate, callback) {
-        var jobData, arr, dataToLoad, res = {}, data;
+        var jobData, arr, dataToLoad, res = {}, data, lastCondidateId = 1;
         readData(function (response) {
             if (response.status === 'SUCCESS') {
                 data = response.result.data;
@@ -99,10 +99,16 @@ const CandidateDAO = {
             if (!jobData.data || jobData.data.length === 0) {
                 jobData.data = [];
             }
-            if(jobData.data.length > 0){
-                lastCondidateId = jobData.data[jobData.data.length -1]['candidateId'];
+            if (jobData.data.length > 0) {
+                lastCondidateId = jobData.data[jobData.data.length - 1]['candidateId'];
             }
-            candidate.candidateId = parseInt(lastCondidateId, 10) + 1;
+            if (candidate.candidateId && lastCondidateId >= candidate.candidateId) {
+                jobData.data = _.remove(jobData.data, function(item){
+                    item.candidateId === candidate.candidateId;
+                }) || [];
+            } else {
+                candidate.candidateId = parseInt(lastCondidateId, 10) + 1;
+            }
             jobData.data.push(candidate);
             arr = _.reject(data, function (job) { return job.jobId === jobId });
             arr.push(jobData);

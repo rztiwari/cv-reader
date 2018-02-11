@@ -4,20 +4,23 @@ var inspect = require('util').inspect;
 var bodyParser = require('body-parser');
 var Busboy = require('busboy');
 var fs = require('fs');
+var request = require('request');
+
 var PDFDataParser = require('./server/pdf-reader');
 var DOCXParser = require('./server/word-docx-parser');
 var WordExtractor = require('word-extractor');
 var { CandidateDAO } = require('./server/dao/candidateDAO');
+var {StepsDAO} = require('./server/dao/stepsDAO');
 
-app.use('/static', express.static(__dirname + '/build/static'));
+// app.use('/static', express.static(__dirname + '/build/static'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.get('/main', function (req, res) {
-  res.sendFile(__dirname + '/build/index.html');
-});
+// app.get('/main', function (req, res) {
+//   res.sendFile(__dirname + '/build/index.html');
+// });
 
-app.post('/upload/cv', function (req, res) {
+app.post('/api/upload/cv', function (req, res) {
 
   var tags = ['Java', 'Javascript', 'React', 'Redux', 'PMP', 'Agile', 'FE', 'Full Stack', 'JSP', 'Servlet', 'Spring'],
     name, jobid, client, role, tagList = '', response;
@@ -27,6 +30,7 @@ app.post('/upload/cv', function (req, res) {
     var busboy = new Busboy({ headers: req.headers });
     var parser;
     busboy.on('field', function (fieldname, val, fieldnameTruncated, valTruncated) {
+      console.log(fieldname, val);
       switch (fieldname) {
         case 'name':
           name = val;
@@ -62,6 +66,7 @@ app.post('/upload/cv', function (req, res) {
       });
       file.on('end', function () {
         var buf = Buffer.concat(buffs);
+        console.log('End', buf);
         if (parser) {
           parser.readData(buf, function (text) {
             if (text) {
@@ -71,14 +76,26 @@ app.post('/upload/cv', function (req, res) {
                 }
               };
             }
-            response = {
+            var dataToSend = {
               'name': name,
               'role': role,
-              'jobid': jobid,
               'client': client,
-              'skillsTag': tagList
+              'skillsTag': tagList,
+              'step': 1
             }
-            res.json(response);
+            var newUrl = req.protocol + '://' + req.get('host') + '/api/candidate/' + jobid;
+            console.log(newUrl, dataToSend);
+            request({
+              method: 'POST',
+              url: newUrl,
+              json: dataToSend
+            }, function (error, response, body) {
+              if (!error && response.statusCode == 200 && body) {
+                body.jobid = jobid;
+                console.log(body);
+                res.json(body);
+              }
+            });
           });
         }
         if (writeStream) {
@@ -94,7 +111,20 @@ app.post('/upload/cv', function (req, res) {
 
 });
 
-app.get('/candidate/:jobid/:candidateid', function (req, res) {
+app.get('/api/candidate/:jobid/', function (req, res) {
+  CandidateDAO.getAllCandidatesByJobId(req.params.jobid, function (response) {
+    if (response.status === 'SUCCESS') {
+      var candidates = response.result;
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify(candidates));
+    } else {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({ error: response.error }));
+    }
+  });
+});
+
+app.get('/api/candidate/:jobid/:candidateid', function (req, res) {
   CandidateDAO.readCandidateByJobId(parseInt(req.params.candidateid, 10), req.params.jobid, function (response) {
     if (response.status === 'SUCCESS') {
       var candidate = response.result;
@@ -107,31 +137,31 @@ app.get('/candidate/:jobid/:candidateid', function (req, res) {
   });
 });
 
-app.delete('/candidate/:jobid/:candidateid', function (req, res) {
+app.delete('/api/candidate/:jobid/:candidateid', function (req, res) {
   CandidateDAO.deleteCandidateInJobId(req.params.jobid, parseInt(req.params.candidateid, 10), function (response) {
     if (response.status === 'SUCCESS') {
       res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify({status: 'SUCCESS'}));
+      res.send(JSON.stringify({ status: 'SUCCESS' }));
     } else {
-      res.setHeader('Content-Type', 'application/json');  
+      res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify({ error: response.error }));
     }
   });
 });
 
-app.delete('/job/:jobid/', function (req, res) {
+app.delete('/api/job/:jobid/', function (req, res) {
   CandidateDAO.deleteJobId(req.params.jobid, function (response) {
     if (response.status === 'SUCCESS') {
       res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify({status: 'SUCCESS'}));
+      res.send(JSON.stringify({ status: 'SUCCESS' }));
     } else {
-      res.setHeader('Content-Type', 'application/json');  
+      res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify({ error: response.error }));
     }
   });
 });
 
-app.post('/candidate/:jobid/', function (req, res) {
+app.post('/api/candidate/:jobid/', function (req, res) {
   var candidate = req.body;
   if (candidate && typeof candidate === 'object') {
     CandidateDAO.insertNewCandidateByJobId(req.params.jobid, candidate, function (response) {
@@ -146,5 +176,17 @@ app.post('/candidate/:jobid/', function (req, res) {
   }
 });
 
+app.get('/api/steps/', function (req, res) {
+  StepsDAO.getAllSteps(function (response) {
+    if (response.status === 'SUCCESS') {
+      var steps = response.result;
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify(steps));
+    } else {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({ error: response.error }));
+    }
+  });
+});
 
-app.listen(3000, () => console.log('Example app listening on port 3000!'));
+app.listen(4000, () => console.log('Example app listening on port 4000!'));
