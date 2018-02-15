@@ -104,7 +104,7 @@ const CandidateDAO = {
             }
             if (candidate.candidateId && lastCondidateId >= candidate.candidateId) {
                 jobData.data = _.remove(jobData.data, function(item){
-                    item.candidateId === candidate.candidateId;
+                   return item.candidateId === candidate.candidateId;
                 }) || [];
             } else {
                 candidate.candidateId = parseInt(lastCondidateId, 10) + 1;
@@ -127,11 +127,11 @@ const CandidateDAO = {
     },
 
     deleteCandidateInJobId: function (jobId, candidateId, callback) {
-        var jobData, candidates, candidateToDelete, arr, dataToLoad, res = {};
+        var jobData, candidates, candidateToDelete, arr, dataToLoad;
         readData(function (response) {
             if (response.status === 'SUCCESS') {
                 var data = response.result.data;
-                var result = [], res = {};
+                var res = {};
                 if (data && data.length > 0) {
                     jobData = _.find(data, function (item) { return item['jobId'] === jobId });
                     if (jobData) {
@@ -172,11 +172,11 @@ const CandidateDAO = {
     },
 
     deleteJobId: function (jobId, callback) {
-        var jobData, dataToDelete, dataToLoad, res = {};
+        var jobData, dataToDelete, dataToLoad;
         readData(function (response) {
             if (response.status === 'SUCCESS') {
                 var data = response.result.data;
-                var result = [], res = {};
+                var res = {};
                 if (data && data.length > 0) {
                     dataToDelete = _.find(data, function (item) { return item['jobId'] === jobId });
                     if (dataToDelete) {
@@ -217,7 +217,7 @@ var readData = function (callback) {
             if (callback && typeof callback === 'function') {
                 response.status = 'ERROR';
                 response.error = err;
-                callback(respone);
+                callback(response);
             } else {
                 console.error('Write call failed')
             }
