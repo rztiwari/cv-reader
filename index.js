@@ -11,6 +11,7 @@ var DOCXParser = require('./server/word-docx-parser');
 var WordExtractor = require('word-extractor');
 var { CandidateDAO } = require('./server/dao/candidateDAO');
 var {StepsDAO} = require('./server/dao/stepsDAO');
+var {TagParser} = require('./server/service/tagParser');
 
 // app.use('/static', express.static(__dirname + '/build/static'));
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -30,7 +31,7 @@ app.post('/api/upload/cv', function (req, res) {
     var busboy = new Busboy({ headers: req.headers });
     var parser;
     busboy.on('field', function (fieldname, val, fieldnameTruncated, valTruncated) {
-      console.log(fieldname, val);
+      // console.log(fieldname, val);
       switch (fieldname) {
         case 'name':
           name = val;
@@ -66,10 +67,11 @@ app.post('/api/upload/cv', function (req, res) {
       });
       file.on('end', function () {
         var buf = Buffer.concat(buffs);
-        console.log('End', buf);
+        // console.log('End', buf);
         if (parser) {
           parser.readData(buf, function (text) {
             if (text) {
+              TagParser.parseData(tags, text);
               for (var i = 0, l = tags.length; i < l; i++) {
                 if (text.toLowerCase().indexOf(tags[i].toLocaleLowerCase()) > 0) {
                   tagList = tagList + (tagList ? ' #' : '#') + tags[i];
@@ -84,7 +86,7 @@ app.post('/api/upload/cv', function (req, res) {
               'step': 1
             }
             var newUrl = req.protocol + '://' + req.get('host') + '/api/candidate/' + jobid;
-            console.log(newUrl, dataToSend);
+            // console.log(newUrl, dataToSend);
             request({
               method: 'POST',
               url: newUrl,
@@ -92,7 +94,7 @@ app.post('/api/upload/cv', function (req, res) {
             }, function (error, response, body) {
               if (!error && response.statusCode == 200 && body) {
                 body.jobid = jobid;
-                console.log(body);
+                // console.log(body);
                 res.json(body);
               }
             });
