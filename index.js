@@ -66,15 +66,16 @@ app.post('/api/upload/cv', function (req, res) {
         buffs.push(data);
       });
       file.on('end', function () {
-        var buf = Buffer.concat(buffs);
+        var experience, buf = Buffer.concat(buffs);
         // console.log('End', buf);
         if (parser) {
           parser.readData(buf, function (text) {
             if (text) {
-              TagParser.parseData(tags, text);
+              experience = TagParser.parseData(tags, text);
+              console.log(experience);
               for (var i = 0, l = tags.length; i < l; i++) {
                 if (text.toLowerCase().indexOf(tags[i].toLocaleLowerCase()) > 0) {
-                  tagList = tagList + (tagList ? ' #' : '#') + tags[i];
+                  tagList = tagList + (tagList ? ' #' : '#') + tags[i] + ' ' +  (experience[tags[i]] || 0) + ' months';
                 }
               };
             }
