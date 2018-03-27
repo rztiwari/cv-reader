@@ -1,4 +1,7 @@
 import React, {Component} from 'react';
+import axios from 'axios';
+import _ from 'lodash';
+
 import './Workflow.css';
 import Dialog from '../dialog/Dialog';
 
@@ -8,23 +11,23 @@ class Workflow extends Component {
         super(props);
         this.state = {
             steps:[
-                {step: 'step1', value: 'Process resume'},
-                {step: 'step2', value: 'Interview 1st round'},
-                {step: 'step3', value: 'Interview Face to Face'},
-                {step: 'step4', value: 'Final decision state'}
+                {step: 1, value: 'Process resume'},
+                {step: 2, value: 'Interview 1st round'},
+                {step: 3, value: 'Interview Face to Face'},
+                {step: 4, value: 'Final decision state'}
             ],
             currentStep: props.currentStep || 'step1',
             data: [
-                {candidateId: 1, candidateName: 'Candidate 1', step: 'step1'},
-                {candidateId: 2, candidateName: 'Candidate 10', step: 'step2'},
-                {candidateId: 3, candidateName: 'Candidate 2', step: 'step3'},
-                {candidateId: 4, candidateName: 'Candidate 3', step: 'step4'},
-                {candidateId: 5, candidateName: 'Candidate 4', step: 'step1'},
-                {candidateId: 6, candidateName: 'Candidate 5', step: 'step2'},
-                {candidateId: 7, candidateName: 'Candidate 6', step: 'step3'},
-                {candidateId: 8, candidateName: 'Candidate 7', step: 'step4'},
-                {candidateId: 9, candidateName: 'Candidate 8', step: 'step1'},
-                {candidateId: 10, candidateName: 'Candidate 9', step: 'step2'}
+                {candidateId: 1, name: 'Candidate 1', step: 'step1'},
+                {candidateId: 2, name: 'Candidate 10', step: 'step2'},
+                {candidateId: 3, name: 'Candidate 2', step: 'step3'},
+                {candidateId: 4, name: 'Candidate 3', step: 'step4'},
+                {candidateId: 5, name: 'Candidate 4', step: 'step1'},
+                {candidateId: 6, name: 'Candidate 5', step: 'step2'},
+                {candidateId: 7, name: 'Candidate 6', step: 'step3'},
+                {candidateId: 8, name: 'Candidate 7', step: 'step4'},
+                {candidateId: 9, name: 'Candidate 8', step: 'step1'},
+                {candidateId: 10, name: 'Candidate 9', step: 'step2'}
             ],
             displayDialog: false
         }
@@ -36,8 +39,32 @@ class Workflow extends Component {
         this.viewDetails = this.viewDetails.bind(this);
     }
 
+    componentDidMount(){
+        const jobid = this.props && 
+            this.props.location && 
+            this.props.location.state && 
+            this.props.location.state.jobid ? this.props.location.state.jobid : '' ;
+
+        axios.get('/api/steps')
+            .then(response => {
+                this.setState({steps: response.data});
+            })
+            .catch(error => {
+                console.log(error);
+            });
+
+        if(jobid){
+            axios.get('/api/candidate/'+ jobid)
+            .then(response => {
+                this.setState({data: response.data.data});
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+        }
+    }
+
     viewDetails(){
-        debugger;
         this.setState({displayDialog: true});
     }
 
@@ -57,23 +84,44 @@ class Workflow extends Component {
     }
     
     drop(ev, targetStep) {
+        const jobid = this.props && 
+            this.props.location && 
+            this.props.location.state && 
+            this.props.location.state.jobid ? this.props.location.state.jobid : '' ;
         ev.preventDefault();
         var targetData = ev.dataTransfer.getData('data');
-        const data = this.state.data;
+       
+        let data = this.state.data;
         const newDataSet = data.map(curr => {
             if(curr.candidateId == targetData){
                 curr.step = targetStep;
             }
             return curr;
-        });
+        })[0];
 
-        this.setState({data: newDataSet});
+        if(jobid && newDataSet){
+            const config = {
+                headers: { 'content-type': 'application/json' }
+            }
+            axios.post('/api/candidate/'+jobid, newDataSet, config)
+            .then(response => {
+                    let dataRemoved = _.filter(data, item => {
+                        return item.candidateId !== newDataSet.candidateId;
+                    });
+                    dataRemoved.push(newDataSet);
+                    this.setState({data: dataRemoved});
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        }
         if(ev.target){
             ev.target.classList.remove('dragging');
         }
     }
 
     render(){
+        if(this.state.data){
         return (
             <div>
                 <div className="workflow">
@@ -83,7 +131,7 @@ class Workflow extends Component {
                                 <div className="header">{curr.value}</div>
                                 {this.state.data.map(data => {
                                     if(data.step === curr.step) {
-                                    return  <div className="data" onClick={this.viewDetails} draggable="true" onDragStart={(evt) => this.drag(evt, data)}>{data.candidateName}</div>;
+                                    return  <div className="data" onClick={this.viewDetails} draggable="true" onDragStart={(evt) => this.drag(evt, data)}>{data.name}</div>;
                                     } else {
                                         return '';
                                     }
@@ -94,7 +142,10 @@ class Workflow extends Component {
                 </div>
                 {this.state.displayDialog && <Dialog close={(val) => this.closeDialog(val)}/>}
             </div>
-        )
+            )
+        }else {
+            <div></div>
+        }
 
     }
 }

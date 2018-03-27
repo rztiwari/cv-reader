@@ -18,7 +18,7 @@ class FileDetails extends Component {
                     {data.role && <ValueLabel value={data.role} label="Role for:" />}
                     {data.skillsTag && <ValueLabel value={data.skillsTag} label="Tagged Skills from Resume:" />}
                     <div>
-                        <Link to="/workflow">Go to workflow</Link>
+                        <Link to={{pathname: '/workflow', state: {jobid: data.jobid}}}>Go to workflow</Link>
                     </div>
                 </div>
             );

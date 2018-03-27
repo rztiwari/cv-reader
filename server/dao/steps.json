@@ -1,0 +1,20 @@
+{
+    "data": [
+        {
+            "step": 1,
+            "value": "Process resume"
+        },
+        {
+            "step": 2,
+            "value": "Interview 1st round"
+        },
+        {
+            "step": 3,
+            "value": "Interview Face to Face"
+        },
+        {
+            "step": 4,
+            "value": "Final decision state"
+        }
+    ]
+}
